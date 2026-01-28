@@ -5,7 +5,8 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/sistema-expedientes/' : '/',
+  // Ajustado al nombre exacto de tu repositorio en GitHub
+  base: process.env.NODE_ENV === 'production' ? '/expedientes/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -14,6 +15,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
+    // Eliminé 'terser' a menos que lo tengas instalado, 
+    // Vite usa 'esbuild' por defecto que es más rápido.
+    minify: 'esbuild', 
   },
 })
