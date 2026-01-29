@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app'; // Corregido: import deleteApp
+import { initializeApp, deleteApp } from 'firebase/app'; 
 import { getAuth } from 'firebase/auth';
 import { db } from '../firebase';
 import { User, UserRole } from '../types';
@@ -39,14 +39,17 @@ export const getUserById = async (uid: string): Promise<User | null> => {
   return null;
 };
 
-// Corregido: Añadido parámetro equipo para coincidir con la llamada en Usuarios.tsx
+// Se agregó el parámetro equipo para que acepte los 3 argumentos enviados desde el componente
 export const updateUserRole = async (
   uid: string,
   rol: User['rol'],
   equipo?: string
 ): Promise<void> => {
   const docRef = doc(db, 'users', uid);
-  await updateDoc(docRef, { rol, equipo: equipo || null });
+  await updateDoc(docRef, { 
+    rol, 
+    equipo: equipo || null 
+  });
 };
 
 export const createUser = async (
@@ -83,9 +86,8 @@ export const createUser = async (
     await setDoc(doc(db, 'users', uid), userDoc);
     await secondaryAuth.signOut();
     
-    console.log('Usuario creado exitosamente:', { uid, email, displayName, rol });
+    console.log('Usuario creado:', { uid, email, displayName, rol });
   } catch (error: any) {
-    console.error('Error detallado al crear usuario:', error);
     if (error?.code === 'auth/email-already-in-use') {
       throw new Error('DUPLICATE_EMAIL');
     } else if (error?.code === 'auth/weak-password') {
@@ -95,10 +97,10 @@ export const createUser = async (
     }
   } finally {
     try {
-      // Corregido: Uso de deleteApp(secondaryApp) en lugar de .delete()
+      // Uso correcto de deleteApp en Firebase v10+
       await deleteApp(secondaryApp);
     } catch (cleanupError) {
-      console.warn('Error al limpiar instancia secundaria:', cleanupError);
+      console.warn('Error al limpiar instancia:', cleanupError);
     }
   }
 };
