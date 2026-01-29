@@ -23,7 +23,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/expedientes">
       <Routes>
         <Route path="/login" element={currentUser ? <Navigate to="/" /> : <Login />} />
         
