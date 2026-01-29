@@ -9,10 +9,10 @@ import {
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app'; // Corregido: import deleteApp
 import { getAuth } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import { User, UserRole } from '../types';
 
 export const getUsers = async (): Promise<User[]> => {
@@ -24,7 +24,7 @@ export const getUsers = async (): Promise<User[]> => {
     return {
       uid: doc.id,
       ...data,
-      activo: data.activo !== undefined ? data.activo : true, // Por defecto activo
+      activo: data.activo !== undefined ? data.activo : true,
     };
   }) as User[];
 };
@@ -39,12 +39,14 @@ export const getUserById = async (uid: string): Promise<User | null> => {
   return null;
 };
 
+// Corregido: Añadido parámetro equipo para coincidir con la llamada en Usuarios.tsx
 export const updateUserRole = async (
   uid: string,
-  rol: User['rol']
+  rol: User['rol'],
+  equipo?: string
 ): Promise<void> => {
   const docRef = doc(db, 'users', uid);
-  await updateDoc(docRef, { rol });
+  await updateDoc(docRef, { rol, equipo: equipo || null });
 };
 
 export const createUser = async (
@@ -53,10 +55,8 @@ export const createUser = async (
   displayName: string,
   rol: UserRole
 ): Promise<void> => {
-  // Generar un ID único para la instancia secundaria
   const secondaryAppId = `SecondaryApp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // Crear una instancia secundaria de Firebase para crear el usuario sin afectar la sesión actual
   const secondaryApp = initializeApp({
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -69,11 +69,9 @@ export const createUser = async (
   const secondaryAuth = getAuth(secondaryApp);
 
   try {
-    // Crear usuario con la instancia secundaria
     const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     const uid = userCredential.user.uid;
 
-    // Crear documento en Firestore
     const userDoc: Omit<User, 'uid'> = {
       displayName,
       email,
@@ -83,31 +81,24 @@ export const createUser = async (
     };
 
     await setDoc(doc(db, 'users', uid), userDoc);
-
-    // Cerrar sesión en la instancia secundaria
     await secondaryAuth.signOut();
     
-    // Éxito: no arrojar ningún error
     console.log('Usuario creado exitosamente:', { uid, email, displayName, rol });
   } catch (error: any) {
     console.error('Error detallado al crear usuario:', error);
-    
-    // Reabrir errores específicos de Firebase
     if (error?.code === 'auth/email-already-in-use') {
       throw new Error('DUPLICATE_EMAIL');
     } else if (error?.code === 'auth/weak-password') {
       throw new Error('WEAK_PASSWORD');
     } else {
-      // Para otros errores, verificar si realmente falló la creación
       throw error;
     }
   } finally {
-    // Limpiar la instancia secundaria de forma segura
     try {
-      await secondaryApp.delete();
+      // Corregido: Uso de deleteApp(secondaryApp) en lugar de .delete()
+      await deleteApp(secondaryApp);
     } catch (cleanupError) {
       console.warn('Error al limpiar instancia secundaria:', cleanupError);
-      // No arrojar error de limpieza
     }
   }
 };
@@ -129,8 +120,6 @@ export const enableUser = async (uid: string): Promise<void> => {
 };
 
 export const deleteUser = async (uid: string): Promise<void> => {
-  // Nota: Solo elimina el documento de Firestore
-  // La cuenta de Authentication debe eliminarse desde Firebase Console o Cloud Functions
   const docRef = doc(db, 'users', uid);
   await updateDoc(docRef, {
     eliminado: true,
