@@ -45,7 +45,7 @@ const Usuarios: React.FC = () => {
     onError: (error: any) => {
       let errorMessage = 'Error al crear el usuario';
       if (error?.message === 'DUPLICATE_EMAIL') errorMessage = 'El email ya está en uso';
-      else if (error?.message === 'WEAK_PASSWORD') errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+      else if (error?.message === 'WEAK_PASSWORD') errorMessage = 'La contraseña es muy corta';
       toast.error(errorMessage);
     },
   });
@@ -77,19 +77,26 @@ const Usuarios: React.FC = () => {
   const handleToggleActive = (user: User) => {
     const isActive = user.activo !== false;
     if (isActive) {
-      if (confirm(`¿Inhabilitar a ${user.displayName}?`)) disableMutation.mutate(user.uid);
+      if (confirm(`¿Inhabilitar a ${user.displayName}?`)) {
+        disableMutation.mutate(user.uid);
+      }
     } else {
       enableMutation.mutate(user.uid);
     }
   };
 
-  const roleLabels = { admin: 'Administrador', gestor: 'Gestor', lectura: 'Lectura', auditor: 'Auditor' };
+  const roleLabels = {
+    admin: 'Administrador',
+    gestor: 'Gestor',
+    lectura: 'Lectura',
+    auditor: 'Auditor',
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
-        {/* Corregido: Se quitó prop icon y se puso dentro del Button */}
+        {/* Se movió el icono adentro del Button para evitar error de tipos */}
         <Button onClick={() => setShowCreateModal(true)}>
           <div className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
@@ -99,7 +106,9 @@ const Usuarios: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div></div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-300">
@@ -178,8 +187,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onSave }) 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
       <form onSubmit={handleSubmit((data) => onSave(data.rol as UserRole, data.equipo))} className="space-y-4">
-        <div><label className="label">Nombre</label><p>{user.displayName}</p></div>
-        <div><label className="label">Email</label><p>{user.email}</p></div>
+        <div><label className="label">Nombre</label><p className="text-gray-900">{user.displayName}</p></div>
+        <div><label className="label">Email</label><p className="text-gray-900">{user.email}</p></div>
         <Select id="rol" label="Rol" required options={[{ value: 'admin', label: 'Administrador' }, { value: 'gestor', label: 'Gestor' }, { value: 'lectura', label: 'Lectura' }]} {...register('rol')} />
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
