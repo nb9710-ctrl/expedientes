@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   // Ajustado al nombre exacto de tu repositorio en GitHub
-  base: process.env.NODE_ENV === 'production' ? '/expedientes/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/nb9710-ctrl/expedientes/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
